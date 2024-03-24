@@ -34,6 +34,18 @@ for k, v in pairs(Config.Locations) do
 		onEnter = onEnter,
 		onExit = onExit,
 	})
+
+	if v.blip.enable then
+		-- add blip here with own code
+		local blip = AddBlipForCoord(v.coords.x, v.coords.y, v.coords.z)
+		SetBlipSprite(blip, v.blip.sprite)
+		SetBlipColour(blip, v.blip.color)
+		SetBlipScale(blip, 0.8)
+		SetBlipAsShortRange(blip, true)
+		BeginTextCommandSetBlipName("STRING")
+		AddTextComponentString(v.blip.label)
+		EndTextCommandSetBlipName(blip)
+	end
 end
 function PerformRaycast(playerPed)
 	-- Get player's position and heading
@@ -89,6 +101,7 @@ function StopFishing()
 	if DoesEntityExist(rod) then
 		DeleteEntity(rod)
 	end
+	DeleteNearbyFishingRods(2.0)
 	SetFishingStatus(false) -- Set fishing status to false
 	ClearPedTasks(PlayerPedId())
 end
@@ -107,6 +120,24 @@ Citizen.CreateThread(function()
 		end
 	end
 end)
+
+function DeleteNearbyFishingRods(range)
+	local playerPed = PlayerPedId()
+	local playerPos = GetEntityCoords(playerPed)
+
+	local objects = GetGamePool("CObject")
+	for _, object in ipairs(objects) do
+		local objectPos = GetEntityCoords(object)
+		local distance = GetDistanceBetweenCoords(playerPos, objectPos, true)
+
+		if distance <= range then
+			local model = GetEntityModel(object)
+			if model == GetHashKey("prop_fishing_rod_01") then
+				DeleteEntity(object)
+			end
+		end
+	end
+end
 
 function startFishingAnimation()
 	fishing = true
@@ -136,6 +167,7 @@ function startFishingAnimation()
 		1,
 		true
 	)
+	return rod
 end
 
 Citizen.CreateThread(function()
@@ -163,7 +195,7 @@ function getItem()
 			random = random - v.rarity
 		end
 	end
-	return item
+	return item, Config.Items[item].amount
 end
 
 function CatchFish()
@@ -177,8 +209,14 @@ function CatchFish()
 		end
 	end
 
-	local item = getItem()
+	local item, amount = getItem()
 	if item then
+		hasenoughspace = lib.callback.await("ludaro-fishing:hasenoughspace", false, item, amount)
+		if not hasenoughspace then
+			Config.Functions.ShowNotification(Locale("not_enough_space"))
+			StopFishing()
+			return
+		end
 		local amount = Config.Items[item].amount
 		TriggerServerEvent("ludaro-fishing:catchFish", item, amount)
 		Config.Functions.ShowNotification(string.format(Locale("caught"), amount, item))

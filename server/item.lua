@@ -16,7 +16,6 @@ end)
 
 RegisterNetEvent("ludaro-fishing:removeItem")
 AddEventHandler("ludaro-fishing:removeItem", function(item)
-	print(item)
 	local xPlayer = ESX.GetPlayerFromId(source)
 	xPlayer.removeInventoryItem(item, 1)
 end)
@@ -24,4 +23,9 @@ end)
 lib.callback.register("ludaro-fishing:getFishingRod", function(source)
 	local xPlayer = ESX.GetPlayerFromId(source)
 	return xPlayer.getInventoryItem(Config.FishingRodItem).count > 0
+end)
+
+lib.callback.register("ludaro-fishing:hasenoughspace", function(source, item, amount)
+	local xPlayer = ESX.GetPlayerFromId(source)
+	return xPlayer.canCarryItem(item, amount)
 end)
