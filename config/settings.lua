@@ -1,5 +1,5 @@
 Config.OnlyLocations = true -- If true, only locations in the Locations table will be used. If false, you can fish anywhere
-Config.Debug = true -- If true, debug messages will be printed to the console
+Config.Debug = false -- If true, debug messages will be printed to the console
 Config.Locations = {
 	[1] = {
 		coords = vector4(-1709.4929, -2498.2036, 3.2295, 301.8156),
